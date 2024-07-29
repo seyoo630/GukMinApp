@@ -2,8 +2,10 @@ import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;  // 추가된 부분
 import 'dart:typed_data';
 import 'dart:io';
+import 'dart:convert';  // 추가된 부분
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -58,7 +60,35 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _sendMessage(ChatMessage chatMessage) {
+  // 추가된 함수: REST API 호출
+  Future<String> fetchResponse(String question, {List<Uint8List>? images}) async {
+    const String apiUrl = 'YOUR_REST_API_ENDPOINT';  // REST API 엔드포인트 URL
+
+    Map<String, String> headers = {"Content-Type": "application/json"};
+    Map<String, dynamic> body = {
+      "question": question,
+      "images": images?.map((img) => base64Encode(img)).toList(),
+    };
+
+    final response = await http.post(
+      Uri.parse(apiUrl),
+      headers: headers,
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+      if (jsonResponse.containsKey('answer')) {
+        return jsonResponse['answer'];  // API 응답에서 답변 추출
+      } else {
+        return '죄송합니다, 처리할 수 없는 질문입니다.';  // 기본 응답
+      }
+    } else {
+      return '죄송합니다, 처리할 수 없는 질문입니다.';  // 기본 응답
+    }
+  }
+
+  void _sendMessage(ChatMessage chatMessage) async {
     setState(() {
       messages = [chatMessage, ...messages];
     });
@@ -70,38 +100,28 @@ class _HomePageState extends State<HomePage> {
           File(chatMessage.medias!.first.url).readAsBytesSync(),
         ];
       }
-      gemini.streamGenerateContent(
-        question,
-        images: images,
-      ).listen((event) {
-        ChatMessage? lastMessage = messages.firstOrNull;
-        if (lastMessage != null && lastMessage.user == geminiUser) {
-          lastMessage = messages.removeAt(0);
-          String response = event.content?.parts?.fold(
-              "", (previous, current) => "$previous ${current.text}") ??
-              "";
-          lastMessage.text += response;
-          setState(
-                () {
-              messages = [lastMessage!, ...messages];
-            },
-          );
-        } else {
-          String response = event.content?.parts?.fold(
-              "", (previous, current) => "$previous ${current.text}") ??
-              "";
-          ChatMessage message = ChatMessage(
-            user: geminiUser,
-            createdAt: DateTime.now(),
-            text: response,
-          );
-          setState(() {
-            messages = [message, ...messages];
-          });
-        }
+
+      String response = await fetchResponse(question, images: images);
+
+      ChatMessage message = ChatMessage(
+        user: geminiUser,
+        createdAt: DateTime.now(),
+        text: response,
+      );
+
+      setState(() {
+        messages = [message, ...messages];
       });
     } catch (e) {
       print(e);
+      ChatMessage message = ChatMessage(
+        user: geminiUser,
+        createdAt: DateTime.now(),
+        text: '죄송합니다, 처리할 수 없는 질문입니다.',
+      );
+      setState(() {
+        messages = [message, ...messages];
+      });
     }
   }
 
