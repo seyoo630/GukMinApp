@@ -2,10 +2,11 @@ import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;  // 추가된 부분
+import 'package:http/http.dart' as http;
 import 'dart:typed_data';
 import 'dart:io';
-import 'dart:convert';  // 추가된 부분
+import 'dart:convert';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -88,6 +89,18 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // 이미지 처리 함수 (로컬에서 처리)
+  Future<String> processImageLocally(Uint8List image) async {
+    final inputImage = InputImage.fromFilePath(File.fromRawPath(image).path);
+    final textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
+    final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+
+    String extractedText = recognizedText.text;
+    textRecognizer.close();
+
+    return '이미지에 대한 분석 결과입니다.\n텍스트: $extractedText';
+  }
+
   void _sendMessage(ChatMessage chatMessage) async {
     setState(() {
       messages = [chatMessage, ...messages];
@@ -99,19 +112,33 @@ class _HomePageState extends State<HomePage> {
         images = [
           File(chatMessage.medias!.first.url).readAsBytesSync(),
         ];
+
+        // 이미지가 포함된 경우 로컬에서 처리
+        String response = await processImageLocally(images.first);
+
+        ChatMessage message = ChatMessage(
+          user: geminiUser,
+          createdAt: DateTime.now(),
+          text: response,
+        );
+
+        setState(() {
+          messages = [message, ...messages];
+        });
+      } else {
+        // 텍스트 질문의 경우 REST API 호출
+        String response = await fetchResponse(question);
+
+        ChatMessage message = ChatMessage(
+          user: geminiUser,
+          createdAt: DateTime.now(),
+          text: response,
+        );
+
+        setState(() {
+          messages = [message, ...messages];
+        });
       }
-
-      String response = await fetchResponse(question, images: images);
-
-      ChatMessage message = ChatMessage(
-        user: geminiUser,
-        createdAt: DateTime.now(),
-        text: response,
-      );
-
-      setState(() {
-        messages = [message, ...messages];
-      });
     } catch (e) {
       print(e);
       ChatMessage message = ChatMessage(
