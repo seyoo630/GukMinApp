@@ -1,5 +1,5 @@
-import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter/material.dart';
+import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -83,7 +83,7 @@ class _HomePageState extends State<HomePage> {
           alignment: Alignment.centerLeft,
           child: Text(
             "챗봇 / 알뜰비서",
-            style: TextStyle(fontSize: 16, color: Colors.white),  // 글자 크기 줄이기, 글자 색 변경
+            style: TextStyle(fontSize: 16, color: Colors.white, fontFamily: 'Pretendard'),  // 글자 크기 줄이기, 글자 색 변경
           ),
         ),
         toolbarHeight: 46.0, // 높이 크기 20px 줄이기
@@ -106,7 +106,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 child: const Text(
                   "광고 배너",
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: Colors.white, fontFamily: 'Pretendard'),
                 ),
               ),
             ),
@@ -135,6 +135,7 @@ class _HomePageState extends State<HomePage> {
           hintText: '메시지를 입력하세요...',
           filled: true,
           fillColor: Colors.white,  // 하단 입력 배경을 흰색으로
+          hintStyle: TextStyle(fontFamily: 'Pretendard'),
         ),
       ),
       currentUser: currentUser,
@@ -164,7 +165,7 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.symmetric(vertical: 10.0),
                 child: Text(
                   message.text!,
-                  style: const TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.normal),
+                  style: const TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.normal, fontFamily: 'Pretendard'),
                 ),
               ),
             );
@@ -183,13 +184,13 @@ class _HomePageState extends State<HomePage> {
                   Expanded(
                     child: Text(
                       message.text!,
-                      style: const TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 18, fontFamily: 'Cafe24'),
                     ),
                   ),
                 ],
               ),
             );
-          }  else if (message.customProperties?["type"] == "banner") {
+          } else if (message.customProperties?["type"] == "banner") {
             return _buildBanner();
           } else {
             return DefaultMessageBuilder(message: message);
@@ -201,51 +202,80 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildBanner() {
     List<Map<String, String>> bannerData = [
-      {"title": "배너 1", "description": "첫 번째 이벤트 설명"},
-      {"title": "배너 2", "description": "두 번째 이벤트 설명"},
-      {"title": "배너 3", "description": "세 번째 이벤트 설명"},
-      {"title": "배너 4", "description": "네 번째 이벤트 설명"},
-      {"title": "배너 5", "description": "다섯 번째 이벤트 설명"},
+      {
+        "title": "다음달 수입 / 지출 안내",
+        "keyword": "\"다음달 예상 지출이 궁금해!\""
+      },
+      {
+        "title": "카테고리별 소비예측 안내",
+        "keyword": "\"다음달 식비 얼마나 나갈지 예측해줘.\""
+      },
+      {
+        "title": "고정지출 항목 소비금액 안내",
+        "keyword": "\"내 고정지출 금액 얼마야?\""
+      },
+      {
+        "title": "이전 소비내역 검색",
+        "keyword": "\"이번달 여행비 얼마 나왔는지 알려줘.\""
+      },
+      {
+        "title": "카드 추천기능",
+        "keyword": "\"나만의 카드 추천해줘!\""
+      },
     ];
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: List.generate(bannerData.length, (index) {
-          return Container(
-            margin: const EdgeInsets.all(8.0),
-            padding: const EdgeInsets.all(48.0),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFDC5C),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.5),
-                  spreadRadius: 2,
-                  blurRadius: 5,
-                  offset: const Offset(0, 3), // changes position of shadow
+          return GestureDetector(
+            onTap: () {
+              _sendMessage(
+                ChatMessage(
+                  user: currentUser,
+                  createdAt: DateTime.now(),
+                  text: bannerData[index]["keyword"]!,
                 ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  bannerData[index]["title"]!,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFDC5C),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.5),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: const Offset(0, 3), // changes position of shadow
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  bannerData[index]["description"]!,
-                  style: const TextStyle(
-                    fontSize: 14,
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    bannerData[index]["title"]!,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: 'Pretendard',
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    bannerData[index]["keyword"]!,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontStyle: FontStyle.italic,
+                      fontFamily: 'Pretendard',
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }),
@@ -406,7 +436,7 @@ class DefaultMessageBuilder extends StatelessWidget {
               if (message.text != null)
                 Text(
                   message.text!,
-                  style: TextStyle(color: message.user.id == "0" ? Colors.black : Colors.black),
+                  style: TextStyle(color: message.user.id == "0" ? Colors.black : Colors.black, fontFamily: 'Pretendard'),
                 ),
               if (message.medias != null && message.medias!.isNotEmpty)
                 Image.file(
